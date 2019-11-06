@@ -1,11 +1,11 @@
-import { FETCH_CONTAINERS } from '../actions/types';
+import { FETCH_COLUMNS } from "../actions/types";
 
 export default (state = {}, action) => {
-  switch(action.type) {
-    case FETCH_CONTAINERS:
+  switch (action.type) {
+    case FETCH_COLUMNS:
       return {
         ...state,
-        containers: action.payload
+        columns: action.payload
       };
     default:
       return state;

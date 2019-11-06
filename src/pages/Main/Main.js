@@ -1,58 +1,68 @@
-import React from 'react'
-import { DragDropContext } from 'react-beautiful-dnd'
-import _ from 'lodash'
-import '@atlaskit/css-reset'
-import styled from 'styled-components'
+import React from "react";
+import "@atlaskit/css-reset";
+import { DragDropContext } from "react-beautiful-dnd";
+import { firebaseDb } from "../../firebase/firebase";
+import styled from "styled-components";
 
-import initialData from '../../initial-data'
-import Column from '../column'
+import initialData from "./initial-data";
+import Column from "../../core/components/column";
 
 const Container = styled.div`
-  display:flex;
-`
+  display: flex;
+`;
 
-export default class Main extends React.Component {
-
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      ...initialData,
-      containerOrder: ['container_1', 'container_2', 'container_3']
-    };
-  }
+export default class App extends React.Component {
+  state = initialData;
 
   componentDidMount() {
-    const { getContainers } = this.props;
-    getContainers();
+    this.updateColumns();
+  }
+
+  componentWillUnmount() {}
+
+  updateColumns() {
+    const columnsToUpdate = [...this.state.columnsToUpdate];
+
+    /*
+      Finish this with:
+        -this.setState({ columnsToUpdate})
+        -fetch from firebase:
+          fetch columns (in order?)
+    */
+    columnsToUpdate.forEach(column => {
+      firebaseDb.ref(`columns/${column.id}/taskIds`).set({
+        "task-1": true,
+        "task-2": true
+      });
+    });
   }
 
   onDragEnd = result => {
-    const { destination, source, draggableId } = result
+    const { destination, source, draggableId } = result;
 
     if (!destination) {
-      return
+      return;
     }
 
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
-      return
+      return;
     }
 
-    const start = this.state.columns[source.droppableId]
-    const finish = this.state.columns[destination.droppableId]
+    const start = this.state.columns[source.droppableId];
+    const finish = this.state.columns[destination.droppableId];
 
     if (start === finish) {
-      const newTaskIds = Array.from(start.taskIds)
-      newTaskIds.splice(source.index, 1)
-      newTaskIds.splice(destination.index, 0, draggableId)
+      const newTaskIds = Array.from(start.taskIds);
+      newTaskIds.splice(source.index, 1);
+      newTaskIds.splice(destination.index, 0, draggableId);
 
       const newColumn = {
         ...start,
         taskIds: newTaskIds
-      }
+      };
 
       const newState = {
         ...this.state,
@@ -60,26 +70,26 @@ export default class Main extends React.Component {
           ...this.state.columns,
           [newColumn.id]: newColumn
         }
-      }
+      };
 
-      this.setState(newState)
-      return
+      this.setState(newState);
+      return;
     }
 
     // Moving from one list to another
-    const startTaskIds = Array.from(start.taskIds)
-    startTaskIds.splice(source.index, 1)
+    const startTaskIds = Array.from(start.taskIds);
+    startTaskIds.splice(source.index, 1);
     const newStart = {
       ...start,
       taskIds: startTaskIds
-    }
+    };
 
-    const finishTaskIds = Array.from(finish.taskIds)
-    finishTaskIds.splice(destination.index, 0, draggableId)
+    const finishTaskIds = Array.from(finish.taskIds);
+    finishTaskIds.splice(destination.index, 0, draggableId);
     const newFinish = {
       ...finish,
       taskIds: finishTaskIds
-    }
+    };
 
     const newState = {
       ...this.state,
@@ -88,34 +98,24 @@ export default class Main extends React.Component {
         [newStart.id]: newStart,
         [newFinish.id]: newFinish
       }
-    }
-    this.setState(newState)
-  }
+    };
+    this.setState(newState);
+  };
 
-  renderColumns() {
-    const { containers } = this.props;
-    
-    if (containers !== undefined && containers.length > 0) {
-      containers.map(container => {
-        const todos = container.todos;
-        console.log(todos);
-  
-        return (
-          <Column key={container.id} column={container} todos={todos} />
-        )
-      })
-    } else {
-      return <p>There are no data in containers...</p>
-    }
-  }
-
-  render() {    
+  render() {
     return (
       <DragDropContext onDragEnd={this.onDragEnd}>
         <Container>
-          {this.renderColumns()}
+          {this.state.columnOrder.map(columnId => {
+            const column = this.state.columns[columnId];
+            const tasks = column.taskIds.map(
+              taskId => this.state.tasks[taskId]
+            );
+
+            return <Column key={column.id} column={column} tasks={tasks} />;
+          })}
         </Container>
       </DragDropContext>
-    )
+    );
   }
 }

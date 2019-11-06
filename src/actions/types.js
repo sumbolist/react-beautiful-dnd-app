@@ -1,2 +1,2 @@
-export const FETCH_TODOS = "FETCH_TODOS";
-export const FETCH_CONTAINERS = "FETCH_CONTAINERS";
+export const FETCH_TASKS = "FETCH_TASKS";
+export const FETCH_COLUMNS = "FETCH_COLUMNS";

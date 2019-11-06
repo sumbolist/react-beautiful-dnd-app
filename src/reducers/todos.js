@@ -1,8 +1,8 @@
-import { FETCH_TODOS } from '../actions/types';
+import { FETCH_TASKS } from "../actions/types";
 
 export default (state = {}, action) => {
-  switch(action.type) {
-    case FETCH_TODOS:
+  switch (action.type) {
+    case FETCH_TASKS:
       return {
         ...state,
         todos: action.payload
