@@ -1,7 +1,7 @@
 import React from "react";
 import "@atlaskit/css-reset";
 import { DragDropContext } from "react-beautiful-dnd";
-import { firebaseDb } from "../../firebase/firebase";
+import { firebaseDb, columnsRef, tasksRef } from "../../firebase/firebase";
 import styled from "styled-components";
 
 import initialData from "./initial-data";
@@ -15,28 +15,89 @@ export default class App extends React.Component {
   state = initialData;
 
   componentDidMount() {
-    this.updateColumns();
+    this.fetchColumns();
+    this.fetchTasks();
   }
 
-  componentWillUnmount() {}
+  componentWillUnmount() {
+    columnsRef.off("value");
+    tasksRef.off("value");
+  }
 
-  updateColumns() {
-    const columnsToUpdate = [...this.state.columnsToUpdate];
+  fetchColumns() {
+    columnsRef.on("value", snapshot => {
+      let columnsObj = snapshot.val();
 
-    /*
-      Finish this with:
-        -onDragStart = updateColumn(source column)
-        -onDragEnd = updateColumn(destination column)
-        -fetch from firebase:
-          fetch columns (in order?)
-        -if (column.locked === true) disabled
-    */
-    columnsToUpdate.forEach(column => {
-      firebaseDb.ref(`columns/${column.id}/taskIds`).set({
-        "task-1": true,
-        "task-2": true
-      });
+      for (let key in columnsObj) {
+        let columnObj = Object.assign({}, columnsObj[key]);
+
+        for (let ckey in columnObj) {
+          if (ckey === "taskIds") {
+            const taskIdsObj = Object.assign({}, columnObj[ckey]);
+            const taskIdsArray = Object.keys(taskIdsObj);
+
+            columnObj.taskIds = taskIdsArray;
+            columnsObj[key] = columnObj;
+          }
+        }
+        
+        if (columnObj.taskIds === undefined) {
+          columnObj.taskIds = [];
+          columnsObj[key] = columnObj;
+        }
+      }
+      
+      this.setState({ columns: columnsObj });
     });
+  }
+
+  fetchTasks() {
+    tasksRef.on("value", snapshot => {
+      const tasksObj = snapshot.val();
+      
+      this.setState({ tasks: tasksObj });
+    });
+  }
+
+  updateColumns(columnsToUpdate, taskIds) {
+    if (columnsToUpdate !== null) {
+      for (let column in columnsToUpdate) {
+        const columnTasks = columnsToUpdate[column].taskIds;
+        let tasksToUpdate = {};
+        
+        columnTasks.forEach(taskId => {
+          tasksToUpdate = {
+            ...tasksToUpdate,
+            [taskId]: true
+          }
+        })
+
+        columnsToUpdate[column].taskIds = tasksToUpdate;
+      }
+
+      /*const columnTasks = columnToUpdate.taskIds;
+      const filteredColumnTasks = columnTasks.filter(task => task !== taskIds[0]);
+      
+      let tasksToUpdate = {};
+      
+      filteredColumnTasks.forEach(taskId => {
+        tasksToUpdate = {
+          ...tasksToUpdate,
+          [taskId]: true
+        }
+      });*/
+
+      
+      firebaseDb.ref(`columns`).set(columnsToUpdate);
+    }
+  }
+
+  updateTask(taskId, locked) {
+    if (taskId !== null) {
+      firebaseDb.ref(`tasks/${taskId}`).update({
+        locked: locked
+      });
+    }
   }
 
   onDragEnd = result => {
@@ -101,20 +162,28 @@ export default class App extends React.Component {
         [newFinish.id]: newFinish
       }
     };
+    
     this.setState(newState);
+    
+    this.updateColumns(newState.columns);
   };
 
   render() {
     return (
-      <DragDropContext onDragEnd={this.onDragEnd}>
+      <DragDropContext onDragStart={this.onDragStart} onDragEnd={this.onDragEnd}>
         <Container>
           {this.state.columnOrder.map(columnId => {
-            const column = this.state.columns[columnId];
-            const tasks = column.taskIds.map(
-              taskId => this.state.tasks[taskId]
-            );
+            if (this.state.columns !== undefined && this.state.tasks !== undefined) {
+              const column = this.state.columns[columnId];
+              let tasks = [];
+              if (column.taskIds !== undefined) {
+                tasks = column.taskIds.map(
+                  taskId => this.state.tasks[taskId]
+                );
+              }
 
-            return <Column key={column.id} column={column} tasks={tasks} />;
+              return <Column key={column.id} column={column} tasks={tasks} />;
+            }
           })}
         </Container>
       </DragDropContext>

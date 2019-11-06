@@ -1,13 +1,15 @@
 const initialData = {
-  tasks: {
-    "task-1": { id: "task-1", content: "Choose Database" },
+  /*tasks: {
+    "task-1": { id: "task-1", content: "Choose Database", locked: true },
     "task-2": {
       id: "task-2",
-      content: "Establish connection between server and client"
+      content: "Establish connection between server and client",
+      locked: false
     },
     "task-3": {
       id: "task-3",
-      content: "Plan frontend structure for DND component"
+      content: "Plan frontend structure for DND component",
+      locked: false
     }
   },
   columns: {
@@ -26,9 +28,10 @@ const initialData = {
       title: "Done",
       taskIds: []
     }
-  },
+  },*/
 
-  columnOrder: ["column-1", "column-2", "column-3"]
+  columnOrder: ["column-1", "column-2", "column-3"],
+  draggedTask: {}
 };
 
 export default initialData;
