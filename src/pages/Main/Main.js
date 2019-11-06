@@ -25,9 +25,11 @@ export default class App extends React.Component {
 
     /*
       Finish this with:
-        -this.setState({ columnsToUpdate})
+        -onDragStart = updateColumn(source column)
+        -onDragEnd = updateColumn(destination column)
         -fetch from firebase:
           fetch columns (in order?)
+        -if (column.locked === true) disabled
     */
     columnsToUpdate.forEach(column => {
       firebaseDb.ref(`columns/${column.id}/taskIds`).set({
